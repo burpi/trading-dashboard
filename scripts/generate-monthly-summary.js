@@ -5,11 +5,13 @@
 const fs = require('fs');
 const path = require('path');
 
-const API_KEY = process.env.ANTHROPIC_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 if (!API_KEY) {
-  console.error('Fout: ANTHROPIC_API_KEY ontbreekt. Zet deze als GitHub Secret.');
+  console.error('Fout: GEMINI_API_KEY ontbreekt. Zet deze als GitHub Secret.');
   process.exit(1);
 }
+
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 function getPreviousMonthRange() {
   const now = new Date();
@@ -81,27 +83,36 @@ Geef ALLEEN geldige JSON terug, in dit format:
 
   const userMessage = `Schrijf het maandoverzicht voor ${monthLabel} op basis van deze cijfers:\n\n${JSON.stringify(stats, null, 2)}`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01'
+      'x-goog-api-key': API_KEY
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-5',
-      max_tokens: 1500,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userMessage }]
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+      generationConfig: {
+        maxOutputTokens: 3000
+      }
     })
   });
 
   if (!response.ok) {
-    throw new Error(`Anthropic API fout (${response.status}): ${await response.text()}`);
+    throw new Error(`Gemini API fout (${response.status}): ${await response.text()}`);
   }
 
   const data = await response.json();
-  const fullText = data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+  const candidate = data.candidates && data.candidates[0];
+  if (!candidate) {
+    throw new Error(`Gemini gaf geen candidates terug: ${JSON.stringify(data)}`);
+  }
+  const fullText = (candidate.content?.parts || [])
+    .filter(part => typeof part.text === 'string')
+    .map(part => part.text)
+    .join('\n');
   const cleaned = fullText.replace(/```json/g, '').replace(/```/g, '').trim();
 
   let summary;

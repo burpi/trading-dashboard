@@ -1,15 +1,17 @@
-// Dit script roept de Claude API aan met web search ingeschakeld, vraagt om een
+// Dit script roept de Gemini API aan met Google Search grounding ingeschakeld, vraagt om een
 // gestructureerde marktanalyse, en schrijft het resultaat naar data/analysis.json.
 // Het draait automatisch 2x per dag via .github/workflows/ai-analyse.yml
 
 const fs = require('fs');
 const path = require('path');
 
-const API_KEY = process.env.ANTHROPIC_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY;
 if (!API_KEY) {
-  console.error('Fout: ANTHROPIC_API_KEY ontbreekt. Zet deze als GitHub Secret.');
+  console.error('Fout: GEMINI_API_KEY ontbreekt. Zet deze als GitHub Secret.');
   process.exit(1);
 }
+
+const GEMINI_MODEL = 'gemini-2.5-flash';
 
 // Optioneel: Twelve Data geeft exacte live koersen (forex, indices, grondstoffen, crypto)
 // i.p.v. dat het model op basis van web search moet gokken. Zonder deze key valt het
@@ -276,37 +278,43 @@ Huidige datum en tijd (UTC): ${new Date().toISOString()}
 ${snapshotBlock}
 ${performanceSummary}`;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
-      'anthropic-version': '2023-06-01'
+      'x-goog-api-key': API_KEY
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-5',
-      max_tokens: 2000,
-      system: SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: userMessage }
+      systemInstruction: {
+        parts: [{ text: SYSTEM_PROMPT }]
+      },
+      contents: [
+        { role: 'user', parts: [{ text: userMessage }] }
       ],
       tools: [
-        { type: 'web_search_20250305', name: 'web_search' }
-      ]
+        { google_search: {} }
+      ],
+      generationConfig: {
+        maxOutputTokens: 4096
+      }
     })
   });
 
   if (!response.ok) {
     const errText = await response.text();
-    throw new Error(`Anthropic API fout (${response.status}): ${errText}`);
+    throw new Error(`Gemini API fout (${response.status}): ${errText}`);
   }
 
   const data = await response.json();
+  const candidate = data.candidates && data.candidates[0];
+  if (!candidate) {
+    throw new Error(`Gemini gaf geen candidates terug: ${JSON.stringify(data)}`);
+  }
 
-  // Pak alle tekst-blokken samen (web search kan meerdere blokken opleveren)
-  const fullText = data.content
-    .filter(block => block.type === 'text')
-    .map(block => block.text)
+  // Pak alle tekst-onderdelen samen (grounding kan meerdere parts opleveren)
+  const fullText = (candidate.content?.parts || [])
+    .filter(part => typeof part.text === 'string')
+    .map(part => part.text)
     .join('\n');
 
   // Strip eventuele markdown-fences als het model die per ongeluk toch toevoegt
