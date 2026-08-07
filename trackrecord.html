@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trackrecord | Trader Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
+
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 text-emerald-400 p-2 rounded-lg border border-emerald-500/20">
+                    <i class="fa-solid fa-chart-column text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight">Trackrecord</h1>
+                    <p class="text-xs text-slate-400">Elke AI-suggestie, automatisch geverifieerd</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="blog/index.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">Blog</a>
+                <a href="trading_dashboard.html" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition">Dashboard</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+
+        <!-- Methodologie / eerlijkheidsnotitie -->
+        <div class="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 mb-4 text-xs text-blue-300/90 flex items-start gap-2">
+            <i class="fa-solid fa-circle-info mt-0.5"></i>
+            <span>
+                Elke suggestie wordt automatisch gevolgd totdat de target of stop-loss geraakt wordt, of na 14 dagen als "verlopen" gemarkeerd.
+                Voor forex en crypto gebeurt dit altijd met live koersdata; voor indices en grondstoffen alleen als er een marktdata-API is ingesteld —
+                zonder die koppeling tellen die suggesties niet mee in de winrate en staan ze apart gemarkeerd als "onbevestigd".
+                Verificatie gebeurt 2x per dag (niet continu), dus een korte piek die tussen twee checks door raakt kan gemist worden.
+            </span>
+        </div>
+
+        <div id="sampleSizeWarning" class="hidden bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 mb-6 text-xs text-amber-300/90 flex items-start gap-2">
+            <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+            <span id="sampleSizeWarningText"></span>
+        </div>
+
+        <!-- Statistieken -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-white" id="statWinRate">–</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Winrate (geverifieerd)</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-white" id="statResolved">–</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Afgeronde suggesties</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-amber-400" id="statOpen">–</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Nog open</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
+                <div class="text-2xl font-bold text-slate-400" id="statUnverified">–</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide mt-1">Onbevestigd</div>
+            </div>
+        </div>
+
+        <!-- Filter -->
+        <div class="flex flex-wrap gap-2 mb-4">
+            <button data-filter="all" onclick="setFilter('all')" class="track-filter px-3 py-1.5 rounded-lg text-xs font-semibold transition border"><i class="fa-solid fa-layer-group mr-1.5"></i>Alle</button>
+            <button data-filter="win" onclick="setFilter('win')" class="track-filter px-3 py-1.5 rounded-lg text-xs font-semibold transition border"><i class="fa-solid fa-check mr-1.5"></i>Win</button>
+            <button data-filter="loss" onclick="setFilter('loss')" class="track-filter px-3 py-1.5 rounded-lg text-xs font-semibold transition border"><i class="fa-solid fa-xmark mr-1.5"></i>Verlies</button>
+            <button data-filter="open" onclick="setFilter('open')" class="track-filter px-3 py-1.5 rounded-lg text-xs font-semibold transition border"><i class="fa-solid fa-clock mr-1.5"></i>Open</button>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                        <tr>
+                            <th class="p-3">Datum</th>
+                            <th class="p-3">Instrument</th>
+                            <th class="p-3">Richting</th>
+                            <th class="p-3">Entry</th>
+                            <th class="p-3">SL / TP</th>
+                            <th class="p-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trackTableBody" class="divide-y divide-slate-800"></tbody>
+                </table>
+            </div>
+            <div id="trackEmptyState" class="hidden text-center text-slate-500 text-xs py-10">
+                Nog geen gegevens beschikbaar. Kom terug na de eerste automatische analyse-run.
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const FILTER_STYLES = {
+            active: 'bg-slate-700 text-white border-slate-600',
+            inactive: 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-600'
+        };
+        const STATUS_BADGES = {
+            win: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+            loss: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+            open: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+            onbevestigd: 'bg-slate-700/30 text-slate-400 border-slate-700',
+            verlopen: 'bg-slate-700/30 text-slate-500 border-slate-700'
+        };
+        const STATUS_LABELS = {
+            win: 'Win', loss: 'Verlies', open: 'Open', onbevestigd: 'Onbevestigd', verlopen: 'Verlopen'
+        };
+
+        let allEntries = [];
+        let currentFilter = 'all';
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.track-filter').forEach(btn => {
+                btn.className = 'track-filter px-3 py-1.5 rounded-lg text-xs font-semibold transition border ' +
+                    (btn.dataset.filter === filter ? FILTER_STYLES.active : FILTER_STYLES.inactive);
+            });
+            renderTable();
+        }
+
+        function renderStats() {
+            const resolved = allEntries.filter(e => e.status === 'win' || e.status === 'loss');
+            const wins = allEntries.filter(e => e.status === 'win').length;
+            const open = allEntries.filter(e => e.status === 'open').length;
+            const unverified = allEntries.filter(e => e.status === 'onbevestigd' || e.status === 'verlopen').length;
+
+            document.getElementById('statWinRate').textContent = resolved.length
+                ? Math.round((wins / resolved.length) * 100) + '%'
+                : '–';
+            document.getElementById('statResolved').textContent = resolved.length;
+            document.getElementById('statOpen').textContent = open;
+            document.getElementById('statUnverified').textContent = unverified;
+
+            const warningEl = document.getElementById('sampleSizeWarning');
+            const warningTextEl = document.getElementById('sampleSizeWarningText');
+            const MIN_SIGNIFICANT_SAMPLE = 30;
+            if (resolved.length < MIN_SIGNIFICANT_SAMPLE) {
+                warningEl.classList.remove('hidden');
+                warningTextEl.textContent = resolved.length === 0
+                    ? 'Er zijn nog geen afgeronde suggesties. De winrate hierboven wordt pas betekenisvol zodra er voldoende data is.'
+                    : `Deze winrate is gebaseerd op slechts ${resolved.length} afgeronde suggestie${resolved.length === 1 ? '' : 's'} — te weinig om statistisch betrouwbaar te zijn. Vanaf ongeveer 30 afgeronde suggesties wordt dit cijfer betekenisvoller.`;
+            } else {
+                warningEl.classList.add('hidden');
+            }
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('trackTableBody');
+            const emptyState = document.getElementById('trackEmptyState');
+
+            const filtered = currentFilter === 'all'
+                ? allEntries
+                : allEntries.filter(e => e.status === currentFilter);
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            tbody.innerHTML = filtered
+                .slice()
+                .sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt))
+                .map(e => {
+                    const dirColor = e.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400';
+                    const badge = STATUS_BADGES[e.status] || STATUS_BADGES.onbevestigd;
+                    const label = STATUS_LABELS[e.status] || e.status;
+                    return `
+                        <tr class="hover:bg-slate-800/50 transition">
+                            <td class="p-3 text-slate-500 whitespace-nowrap">${new Date(e.generatedAt).toLocaleDateString('nl-NL')}</td>
+                            <td class="p-3 font-semibold text-white">${escapeHtml(e.instrument)}</td>
+                            <td class="p-3"><span class="${dirColor} font-bold">${e.direction}</span></td>
+                            <td class="p-3">${e.entry}</td>
+                            <td class="p-3 text-xs"><span class="text-rose-400">${e.stopLoss}</span> / <span class="text-emerald-400">${e.target}</span></td>
+                            <td class="p-3"><span class="${badge} px-2 py-0.5 rounded text-xs border">${label}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+        }
+
+        async function loadTrackRecord() {
+            try {
+                const res = await fetch('data/track-record.json', { cache: 'no-store' });
+                if (!res.ok) throw new Error('track-record.json niet gevonden');
+                allEntries = await res.json();
+            } catch (e) {
+                console.error('Kon trackrecord niet laden:', e);
+                allEntries = [];
+            }
+            renderStats();
+            setFilter('all');
+        }
+
+        loadTrackRecord();
+    </script>
+</body>
+</html>

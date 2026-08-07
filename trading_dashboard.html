@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamisch Handelsdashboard & Marktanalyse</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased">
+
+    <!-- Top Navigatie & Marktstatus -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-emerald-500/10 text-emerald-400 p-2 rounded-lg border border-emerald-500/20">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight">Trader Pro Dashboard</h1>
+                    <p class="text-xs text-slate-400">Automatische updates: EU & US Markt sessies</p>
+                </div>
+            </div>
+            
+            <!-- Sessie Status Badge -->
+            <div class="flex items-center gap-4">
+                <div id="sessionBadge" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="sessionText">Laadt sessie...</span>
+                </div>
+                <button onclick="refreshData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 border border-slate-700">
+                    <i class="fa-solid fa-rotate"></i> Handmatig Verversen
+                </button>
+                <a href="blog/index.html" class="bg-violet-600/10 hover:bg-violet-600/20 text-violet-300 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 border border-violet-600/20">
+                    <i class="fa-solid fa-newspaper"></i> Blog
+                </a>
+                <a href="trackrecord.html" class="bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-300 px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1.5 border border-emerald-600/20">
+                    <i class="fa-solid fa-chart-column"></i> Trackrecord
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        <!-- Hoofdcontent (3 kolommen breed op desktop) -->
+        <div class="lg:col-span-3 space-y-6">
+
+            <!-- Advertentieblok Boven -->
+            <div class="bg-slate-900/60 border border-dashed border-slate-700 rounded-xl p-4 text-center">
+                <div class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Gesponsorde Inhoud</div>
+                <div class="bg-slate-800/40 rounded-lg p-6 text-slate-400 text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rectangle-ad text-slate-600 text-lg"></i>
+                    <span>Advertentieblok 1 (Plaats hier je Google AdSense of Banner HTML tag)</span>
+                </div>
+            </div>
+
+            <!-- Marktanalyse & Kansen Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Vandaag's Belangrijkste Focus -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">Top Setup</span>
+                            <span class="text-xs text-slate-400" id="updateTimestamp">Bijgewerkt: Vandaag</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-slate-100 mb-2">DAX 40 / EuroStoxx Momentum</h2>
+                        <p class="text-sm text-slate-300 leading-relaxed mb-4">
+                            Europese indices tonen sterke steun rond de dagelijkse liquiditeitszones. Let op de opening van Wall Street voor een eventuele trendvolgende breakout.
+                        </p>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs space-y-1">
+                        <div class="flex justify-between"><span class="text-slate-400">Instapzone:</span> <span class="font-semibold text-emerald-400">18.450 - 18.480</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Stop Loss:</span> <span class="font-semibold text-rose-400">18.390</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Take Profit:</span> <span class="font-semibold text-emerald-400">18.650</span></div>
+                    </div>
+                </div>
+
+                <!-- Farmaceutische Titanenstrijd Chart -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">Sector Watch</span>
+                            <span class="text-xs text-slate-400">Eli Lilly vs. Novo Nordisk</span>
+                        </div>
+                        <div class="h-36 relative">
+                            <canvas id="sectorChart"></canvas>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-3 text-center">Vergelijking van relatieve kracht in Q1/Q2.</p>
+                </div>
+            </div>
+
+            <!-- Uitgebreid Handelsplan Tabel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 overflow-hidden">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <h3 class="font-bold text-base flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-emerald-400"></i> Actieve Handelsniveaus
+                    </h3>
+                    <button onclick="openTradeForm()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-plus"></i> Trade Toevoegen
+                    </button>
+                </div>
+
+                <!-- Trade Formulier (verborgen tot geopend) -->
+                <div id="tradeFormWrapper" class="hidden bg-slate-950 border border-slate-800 rounded-lg p-4 mb-4">
+                    <form id="tradeForm" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs" onsubmit="submitTradeForm(event)">
+                        <input type="hidden" id="tradeId" value="">
+                        <div class="col-span-2 md:col-span-1">
+                            <label class="text-slate-400 block mb-1">Instrument</label>
+                            <input type="text" id="tradeInstrument" required placeholder="bv. GBP/USD" class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Richting</label>
+                            <select id="tradeDirection" class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                                <option value="LONG">LONG</option>
+                                <option value="SHORT">SHORT</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Asset Type</label>
+                            <select id="tradeAssetClass" class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                                <option value="forex">Forex</option>
+                                <option value="index">Index</option>
+                                <option value="commodity">Grondstof</option>
+                                <option value="crypto">Crypto</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Status</label>
+                            <select id="tradeStatus" class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                                <option value="Actief">Actief</option>
+                                <option value="In Afwachting">In Afwachting</option>
+                                <option value="Gesloten">Gesloten</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Entry</label>
+                            <input type="number" step="any" id="tradeEntry" required class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Stop Loss</label>
+                            <input type="number" step="any" id="tradeStopLoss" required class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="text-slate-400 block mb-1">Target</label>
+                            <input type="number" step="any" id="tradeTarget" required class="w-full bg-slate-900 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div class="col-span-2 md:col-span-4 flex justify-end gap-2 mt-1">
+                            <button type="button" onclick="closeTradeForm()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg font-medium transition border border-slate-700">
+                                Annuleren
+                            </button>
+                            <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg transition">
+                                Opslaan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Asset Type Tabblad Filters -->
+                <div id="assetTabs" class="flex flex-wrap gap-2 mb-4 border-b border-slate-800 pb-3">
+                    <button data-filter="all" onclick="setAssetFilter('all')" class="asset-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition border">
+                        <i class="fa-solid fa-layer-group mr-1.5"></i>Alle
+                    </button>
+                    <button data-filter="forex" onclick="setAssetFilter('forex')" class="asset-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition border">
+                        <i class="fa-solid fa-sterling-sign mr-1.5"></i>Forex
+                    </button>
+                    <button data-filter="index" onclick="setAssetFilter('index')" class="asset-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition border">
+                        <i class="fa-solid fa-chart-simple mr-1.5"></i>Index
+                    </button>
+                    <button data-filter="commodity" onclick="setAssetFilter('commodity')" class="asset-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition border">
+                        <i class="fa-solid fa-fire mr-1.5"></i>Grondstoffen
+                    </button>
+                    <button data-filter="crypto" onclick="setAssetFilter('crypto')" class="asset-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition border">
+                        <i class="fa-brands fa-bitcoin mr-1.5"></i>Crypto
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Instrument</th>
+                                <th class="p-3">Richting</th>
+                                <th class="p-3">Entry</th>
+                                <th class="p-3">Stop Loss</th>
+                                <th class="p-3">Target</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right">Acties</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradesTableBody" class="divide-y divide-slate-800">
+                            <!-- Dynamisch gevuld via JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="tradesEmptyState" class="hidden text-center text-slate-500 text-xs py-8">
+                        Nog geen trades toegevoegd. Klik op "Trade Toevoegen" om te beginnen.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trade Journal -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="font-bold text-base mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-book text-blue-400"></i> Trade Journal
+                </h3>
+                <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+                        <div class="text-lg font-bold text-white" id="journalWinRate">–</div>
+                        <div class="text-[10px] text-slate-500 uppercase tracking-wide">Winrate</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+                        <div class="text-lg font-bold text-white" id="journalTotalR">–</div>
+                        <div class="text-[10px] text-slate-500 uppercase tracking-wide">Totaal R</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-lg p-3">
+                        <div class="text-lg font-bold text-white" id="journalCount">–</div>
+                        <div class="text-[10px] text-slate-500 uppercase tracking-wide">Gesloten trades</div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-slate-300">
+                        <thead class="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Instrument</th>
+                                <th class="p-3">Richting</th>
+                                <th class="p-3">Entry → Exit</th>
+                                <th class="p-3">Resultaat</th>
+                                <th class="p-3">R-multiple</th>
+                                <th class="p-3">Gesloten op</th>
+                            </tr>
+                        </thead>
+                        <tbody id="journalTableBody" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                    <div id="journalEmptyState" class="hidden text-center text-slate-500 text-xs py-8">
+                        Nog geen gesloten trades. Sluit een actieve trade via het <i class="fa-solid fa-flag-checkered"></i>-icoon in de tabel hierboven.
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Marktanalyse Paneel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+                    <h3 class="font-bold text-base flex items-center gap-2">
+                        <i class="fa-solid fa-robot text-violet-400"></i> AI Marktanalyse
+                    </h3>
+                    <span id="aiTimestamp" class="text-xs text-slate-500">Laden...</span>
+                </div>
+                <p id="aiSummary" class="text-sm text-slate-300 leading-relaxed mb-4"></p>
+                <div id="aiSuggestions" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                <div id="aiEmptyState" class="hidden text-center text-slate-500 text-xs py-6">
+                    Nog geen AI-suggesties beschikbaar.
+                </div>
+                <p class="text-[11px] text-slate-500 mt-4 border-t border-slate-800 pt-3">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    <span id="aiDisclaimer">Automatisch gegenereerde AI-analyse, geen financieel advies. Doe altijd je eigen onderzoek en beheer je risico.</span>
+                </p>
+            </div>
+
+            <!-- Advertentieblok Onder -->
+            <div class="bg-slate-900/60 border border-dashed border-slate-700 rounded-xl p-4 text-center">
+                <div class="text-xs text-slate-500 uppercase font-bold tracking-wider mb-1">Gesponsorde Inhoud</div>
+                <div class="bg-slate-800/40 rounded-lg p-6 text-slate-400 text-sm flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rectangle-ad text-slate-600 text-lg"></i>
+                    <span>Advertentieblok 2 (Plaats hier je affiliate banner of advertentienetwerk tag)</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar / Widget Kolom (1 kolom breed op desktop) -->
+        <aside class="space-y-6">
+
+            <!-- Live Marktdata Widget -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="font-bold text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-signal text-emerald-400"></i> Live Koersen
+                    </h3>
+                    <button onclick="loadLiveMarketData()" class="text-slate-500 hover:text-emerald-400 transition" title="Vernieuwen">
+                        <i class="fa-solid fa-rotate text-xs"></i>
+                    </button>
+                </div>
+                <div id="liveMarketData" class="space-y-2 text-xs">
+                    <div class="text-slate-500">Laden...</div>
+                </div>
+                <p class="text-[10px] text-slate-600 mt-3">Forex via Frankfurter (ECB), crypto via CoinGecko. Indices/grondstoffen vereisen een betaalde databron.</p>
+            </div>
+
+            <!-- Risico Calculator Tool -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="font-bold text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-calculator text-blue-400"></i> Risico Calculator
+                </h3>
+                <div class="space-y-3 text-xs">
+                    <div>
+                        <label class="text-slate-400 block mb-1">Rekeninggrootte (€)</label>
+                        <input type="number" id="accountSize" value="10000" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-slate-400 block mb-1">Risico per Trade (%)</label>
+                        <input type="number" id="riskPercent" value="1" step="0.5" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="text-slate-400 block mb-1">Pips / Punten Stop Loss</label>
+                        <input type="number" id="stopLossPips" value="40" class="w-full bg-slate-950 border border-slate-800 rounded p-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <button onclick="calculateRisk()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-2 rounded transition mt-2">
+                        Bereken Positiegrootte
+                    </button>
+                    <div id="calcResult" class="bg-slate-950 p-3 rounded border border-slate-800 text-center font-medium text-slate-300 mt-2">
+                        Max Verlies: €100
+                    </div>
+                </div>
+            </div>
+
+            <!-- Economische Kalender Widget -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="font-bold text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-amber-400"></i> Belangrijke Events Vandaag
+                </h3>
+                <div class="space-y-3 text-xs">
+                    <div class="border-l-2 border-rose-500 pl-3 py-1">
+                        <div class="text-slate-400">14:30 - US Non-Farm Payrolls</div>
+                        <div class="font-semibold text-slate-200">Hoogste volatiliteit verwacht op USD & Indices</div>
+                    </div>
+                    <div class="border-l-2 border-amber-500 pl-3 py-1">
+                        <div class="text-slate-400">16:00 - ISM Services PMI</div>
+                        <div class="font-semibold text-slate-200">Impact op obligatiemarkt & dollar</div>
+                    </div>
+                    <div class="border-l-2 border-blue-500 pl-3 py-1">
+                        <div class="text-slate-400">10:00 - EU Retail Sales</div>
+                        <div class="font-semibold text-slate-200">Richtlijn voor vroege handel</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aanbevolen Brokers (affiliate) -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+                <h3 class="font-bold text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-building-columns text-emerald-400"></i> Aanbevolen Brokers
+                </h3>
+                <div class="space-y-2 text-xs" id="brokerList">
+                    <!--
+                        VUL HIER JE EIGEN AFFILIATE-LINKS IN. Voorbeeld-rij hieronder:
+
+                        <a href="https://voorbeeld-broker.com/?ref=JOUW_AFFILIATE_ID" target="_blank" rel="noopener sponsored"
+                           class="flex items-center justify-between bg-slate-950 border border-slate-800 hover:border-emerald-500/40 rounded-lg p-3 transition">
+                            <span class="font-semibold text-white">Broker Naam</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500"></i>
+                        </a>
+                    -->
+                    <div class="text-slate-500 italic">Nog geen brokers toegevoegd — vervang deze placeholder in de code door je eigen affiliate-links.</div>
+                </div>
+                <p class="text-[10px] text-slate-600 mt-3 border-t border-slate-800 pt-3">
+                    <i class="fa-solid fa-circle-info mr-1"></i>
+                    Dit zijn affiliate-links: als je via een link een account opent, kunnen wij een vergoeding ontvangen. Dit heeft geen invloed op onze AI-analyse.
+                </p>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- JavaScript Logica -->
+    <script>
+        // Bepaal markt sessie op basis van tijd (UTC / Amsterdam tijd)
+        function updateMarketSession() {
+            const now = new Date();
+            const hour = now.getHours();
+            const badge = document.getElementById('sessionBadge');
+            const text = document.getElementById('sessionText');
+
+            // EU Sessie: 08:00 - 16:30 | US Sessie: 14:30 - 21:00
+            if (hour >= 8 && hour < 16.5) {
+                badge.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-2";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                text.innerText = "Europese Markt Open (EU Focus)";
+            } else if (hour >= 14.5 && hour < 22) {
+                badge.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-2";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-blue-400 animate-pulse";
+                text.innerText = "Amerikaanse Markt Open (Wall Street Focus)";
+            } else {
+                badge.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2";
+                badge.querySelector('span').className = "w-2 h-2 rounded-full bg-slate-500";
+                text.innerText = "Markt Gesloten / Voorbereiding";
+            }
+        }
+
+        // ==========================================
+        // Dynamisch Trade Management (localStorage)
+        // ==========================================
+        const TRADES_STORAGE_KEY = 'traderpro_trades';
+
+        const STATUS_STYLES = {
+            'Actief': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+            'In Afwachting': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+            'Gesloten': 'bg-slate-700/30 text-slate-400 border-slate-700'
+        };
+
+        const ASSET_LABELS = {
+            'forex': 'Forex',
+            'index': 'Index',
+            'commodity': 'Grondstof',
+            'crypto': 'Crypto'
+        };
+
+        // Tailwind classes per asset type — crypto krijgt een eigen violet accent, los van de rest
+        const ASSET_TAB_STYLES = {
+            'all':       { active: 'bg-slate-700 text-white border-slate-600', inactive: 'bg-slate-950 text-slate-400 border-slate-800 hover:border-slate-600' },
+            'forex':     { active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40', inactive: 'bg-slate-950 text-slate-400 border-slate-800 hover:border-emerald-500/30' },
+            'index':     { active: 'bg-blue-500/20 text-blue-400 border-blue-500/40', inactive: 'bg-slate-950 text-slate-400 border-slate-800 hover:border-blue-500/30' },
+            'commodity': { active: 'bg-amber-500/20 text-amber-400 border-amber-500/40', inactive: 'bg-slate-950 text-slate-400 border-slate-800 hover:border-amber-500/30' },
+            'crypto':    { active: 'bg-violet-500/20 text-violet-400 border-violet-500/40', inactive: 'bg-slate-950 text-slate-400 border-slate-800 hover:border-violet-500/30' }
+        };
+
+        const ASSET_BADGE_CLASS = {
+            'forex': 'text-emerald-500',
+            'index': 'text-blue-500',
+            'commodity': 'text-amber-500',
+            'crypto': 'text-violet-400'
+        };
+
+        let currentAssetFilter = 'all';
+
+        // Standaard voorbeeldtrades — worden alleen gebruikt als er nog niets is opgeslagen
+        const DEFAULT_TRADES = [
+            { id: 't1', instrument: 'EUR/USD', direction: 'LONG', assetClass: 'forex', entry: 1.0820, stopLoss: 1.0785, target: 1.0910, status: 'Actief' },
+            { id: 't2', instrument: 'WTI Olie', direction: 'SHORT', assetClass: 'commodity', entry: 78.50, stopLoss: 79.60, target: 75.50, status: 'In Afwachting' },
+            { id: 't3', instrument: 'Goud (XAU/USD)', direction: 'LONG', assetClass: 'commodity', entry: 2320.00, stopLoss: 2305.00, target: 2360.00, status: 'Actief' },
+            { id: 't4', instrument: 'BTC/USD', direction: 'LONG', assetClass: 'crypto', entry: 61500, stopLoss: 58800, target: 67000, status: 'Actief' },
+            { id: 't5', instrument: 'ETH/USD', direction: 'LONG', assetClass: 'crypto', entry: 3350, stopLoss: 3150, target: 3750, status: 'In Afwachting' }
+        ];
+
+        function loadTrades() {
+            try {
+                const raw = localStorage.getItem(TRADES_STORAGE_KEY);
+                if (!raw) {
+                    saveTrades(DEFAULT_TRADES);
+                    return [...DEFAULT_TRADES];
+                }
+                return JSON.parse(raw);
+            } catch (e) {
+                console.error('Kon trades niet laden:', e);
+                return [...DEFAULT_TRADES];
+            }
+        }
+
+        function saveTrades(trades) {
+            try {
+                localStorage.setItem(TRADES_STORAGE_KEY, JSON.stringify(trades));
+            } catch (e) {
+                console.error('Kon trades niet opslaan:', e);
+            }
+        }
+
+        function setAssetFilter(filter) {
+            currentAssetFilter = filter;
+            document.querySelectorAll('.asset-tab').forEach(btn => {
+                const key = btn.dataset.filter;
+                const styles = ASSET_TAB_STYLES[key];
+                btn.className = 'asset-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition border ' +
+                    (key === filter ? styles.active : styles.inactive);
+            });
+            renderTrades();
+        }
+
+        function renderTrades() {
+            const allTrades = loadTrades();
+            const trades = currentAssetFilter === 'all'
+                ? allTrades
+                : allTrades.filter(t => t.assetClass === currentAssetFilter);
+
+            const tbody = document.getElementById('tradesTableBody');
+            const emptyState = document.getElementById('tradesEmptyState');
+
+            if (trades.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.textContent = allTrades.length === 0
+                    ? 'Nog geen trades toegevoegd. Klik op "Trade Toevoegen" om te beginnen.'
+                    : `Geen trades in de categorie "${ASSET_LABELS[currentAssetFilter] || currentAssetFilter}".`;
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            tbody.innerHTML = trades.map(t => {
+                const dirColor = t.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400';
+                const statusClass = STATUS_STYLES[t.status] || STATUS_STYLES['In Afwachting'];
+                const assetLabel = ASSET_LABELS[t.assetClass] || t.assetClass;
+                const assetBadgeColor = ASSET_BADGE_CLASS[t.assetClass] || 'text-slate-500';
+                return `
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="p-3">
+                            <div class="font-semibold text-white">${escapeHtml(t.instrument)}</div>
+                            <div class="text-[10px] ${assetBadgeColor} uppercase tracking-wide font-semibold">${escapeHtml(assetLabel)}</div>
+                        </td>
+                        <td class="p-3"><span class="${dirColor} font-bold">${t.direction}</span></td>
+                        <td class="p-3">${formatNumber(t.entry)}</td>
+                        <td class="p-3">${formatNumber(t.stopLoss)}</td>
+                        <td class="p-3">${formatNumber(t.target)}</td>
+                        <td class="p-3"><span class="${statusClass} px-2 py-0.5 rounded text-xs border">${escapeHtml(t.status)}</span></td>
+                        <td class="p-3 text-right whitespace-nowrap">
+                            <button onclick="closeTradePrompt('${t.id}')" class="text-slate-400 hover:text-blue-400 transition px-1.5" title="Trade sluiten (naar journal)">
+                                <i class="fa-solid fa-flag-checkered text-xs"></i>
+                            </button>
+                            <button onclick="openTradeForm('${t.id}')" class="text-slate-400 hover:text-emerald-400 transition px-1.5" title="Bewerken">
+                                <i class="fa-solid fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteTrade('${t.id}')" class="text-slate-400 hover:text-rose-400 transition px-1.5" title="Verwijderen">
+                                <i class="fa-solid fa-trash text-xs"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function formatNumber(n) {
+            const num = parseFloat(n);
+            return isNaN(num) ? n : num.toString();
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function openTradeForm(tradeId) {
+            const wrapper = document.getElementById('tradeFormWrapper');
+            const form = document.getElementById('tradeForm');
+            form.reset();
+            document.getElementById('tradeId').value = '';
+
+            if (!tradeId && currentAssetFilter !== 'all') {
+                document.getElementById('tradeAssetClass').value = currentAssetFilter;
+            }
+
+            if (tradeId) {
+                const trades = loadTrades();
+                const trade = trades.find(t => t.id === tradeId);
+                if (trade) {
+                    document.getElementById('tradeId').value = trade.id;
+                    document.getElementById('tradeInstrument').value = trade.instrument;
+                    document.getElementById('tradeDirection').value = trade.direction;
+                    document.getElementById('tradeAssetClass').value = trade.assetClass;
+                    document.getElementById('tradeStatus').value = trade.status;
+                    document.getElementById('tradeEntry').value = trade.entry;
+                    document.getElementById('tradeStopLoss').value = trade.stopLoss;
+                    document.getElementById('tradeTarget').value = trade.target;
+                }
+            }
+            wrapper.classList.remove('hidden');
+            wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function closeTradeForm() {
+            document.getElementById('tradeFormWrapper').classList.add('hidden');
+            document.getElementById('tradeForm').reset();
+        }
+
+        function submitTradeForm(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('tradeId').value;
+            const tradeData = {
+                instrument: document.getElementById('tradeInstrument').value.trim(),
+                direction: document.getElementById('tradeDirection').value,
+                assetClass: document.getElementById('tradeAssetClass').value,
+                status: document.getElementById('tradeStatus').value,
+                entry: parseFloat(document.getElementById('tradeEntry').value),
+                stopLoss: parseFloat(document.getElementById('tradeStopLoss').value),
+                target: parseFloat(document.getElementById('tradeTarget').value)
+            };
+
+            const trades = loadTrades();
+
+            if (id) {
+                const index = trades.findIndex(t => t.id === id);
+                if (index !== -1) {
+                    trades[index] = { ...trades[index], ...tradeData };
+                }
+            } else {
+                tradeData.id = 't' + Date.now();
+                trades.push(tradeData);
+            }
+
+            saveTrades(trades);
+            renderTrades();
+            closeTradeForm();
+        }
+
+        function deleteTrade(tradeId) {
+            if (!confirm('Weet je zeker dat je deze trade wilt verwijderen?')) return;
+            const trades = loadTrades().filter(t => t.id !== tradeId);
+            saveTrades(trades);
+            renderTrades();
+        }
+
+        // ==========================================
+        // Trade Journal (gesloten trades, win/verlies-tracking)
+        // ==========================================
+        const JOURNAL_STORAGE_KEY = 'traderpro_journal';
+
+        function loadJournal() {
+            try {
+                const raw = localStorage.getItem(JOURNAL_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                console.error('Kon journal niet laden:', e);
+                return [];
+            }
+        }
+
+        function saveJournal(entries) {
+            try {
+                localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(entries));
+            } catch (e) {
+                console.error('Kon journal niet opslaan:', e);
+            }
+        }
+
+        function closeTradePrompt(tradeId) {
+            const trades = loadTrades();
+            const trade = trades.find(t => t.id === tradeId);
+            if (!trade) return;
+
+            const exitInput = prompt(`Sluit ${trade.instrument} (${trade.direction})\nVoer de exit-prijs in:`, trade.target);
+            if (exitInput === null) return; // geannuleerd
+
+            const exitPrice = parseFloat(exitInput);
+            if (isNaN(exitPrice)) {
+                alert('Ongeldige prijs.');
+                return;
+            }
+
+            // R-multiple: hoeveel keer het initiële risico (entry - stopLoss) is behaald
+            const risk = Math.abs(trade.entry - trade.stopLoss);
+            let rMultiple = 0;
+            if (risk > 0) {
+                const moveInFavor = trade.direction === 'LONG'
+                    ? (exitPrice - trade.entry)
+                    : (trade.entry - exitPrice);
+                rMultiple = moveInFavor / risk;
+            }
+
+            const result = rMultiple > 0.05 ? 'Winst' : (rMultiple < -0.05 ? 'Verlies' : 'Break-even');
+
+            const journal = loadJournal();
+            journal.unshift({
+                id: 'j-' + Date.now(),
+                instrument: trade.instrument,
+                direction: trade.direction,
+                assetClass: trade.assetClass,
+                entry: trade.entry,
+                exit: exitPrice,
+                result,
+                rMultiple: Math.round(rMultiple * 100) / 100,
+                closedAt: new Date().toISOString()
+            });
+            saveJournal(journal);
+
+            // Trade verwijderen uit actieve tabel
+            const remainingTrades = trades.filter(t => t.id !== tradeId);
+            saveTrades(remainingTrades);
+
+            renderTrades();
+            renderJournal();
+        }
+
+        function renderJournal() {
+            const journal = loadJournal();
+            const tbody = document.getElementById('journalTableBody');
+            const emptyState = document.getElementById('journalEmptyState');
+
+            if (journal.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                document.getElementById('journalWinRate').textContent = '–';
+                document.getElementById('journalTotalR').textContent = '–';
+                document.getElementById('journalCount').textContent = '0';
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            const wins = journal.filter(j => j.result === 'Winst').length;
+            const winRate = Math.round((wins / journal.length) * 100);
+            const totalR = journal.reduce((sum, j) => sum + (j.rMultiple || 0), 0);
+
+            document.getElementById('journalWinRate').textContent = winRate + '%';
+            document.getElementById('journalTotalR').textContent = (totalR >= 0 ? '+' : '') + totalR.toFixed(2) + 'R';
+            document.getElementById('journalCount').textContent = journal.length;
+
+            tbody.innerHTML = journal.map(j => {
+                const dirColor = j.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400';
+                const resultColor = j.result === 'Winst' ? 'text-emerald-400' : (j.result === 'Verlies' ? 'text-rose-400' : 'text-slate-400');
+                const rColor = j.rMultiple > 0 ? 'text-emerald-400' : (j.rMultiple < 0 ? 'text-rose-400' : 'text-slate-400');
+                return `
+                    <tr class="hover:bg-slate-800/50 transition">
+                        <td class="p-3 font-semibold text-white">${escapeHtml(j.instrument)}</td>
+                        <td class="p-3"><span class="${dirColor} font-bold">${j.direction}</span></td>
+                        <td class="p-3">${formatNumber(j.entry)} → ${formatNumber(j.exit)}</td>
+                        <td class="p-3"><span class="${resultColor} font-semibold">${j.result}</span></td>
+                        <td class="p-3"><span class="${rColor} font-semibold">${j.rMultiple >= 0 ? '+' : ''}${j.rMultiple}R</span></td>
+                        <td class="p-3 text-slate-500">${new Date(j.closedAt).toLocaleDateString('nl-NL')}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ==========================================
+        // AI Marktanalyse (2x daags, extern gegenereerd)
+        // ==========================================
+        async function loadAiAnalysis() {
+            const timestampEl = document.getElementById('aiTimestamp');
+            const summaryEl = document.getElementById('aiSummary');
+            const suggestionsEl = document.getElementById('aiSuggestions');
+            const emptyEl = document.getElementById('aiEmptyState');
+            const disclaimerEl = document.getElementById('aiDisclaimer');
+
+            try {
+                const res = await fetch('data/analysis.json', { cache: 'no-store' });
+                if (!res.ok) throw new Error('analysis.json niet gevonden');
+                const analysis = await res.json();
+
+                timestampEl.textContent = analysis.generatedAt
+                    ? 'Bijgewerkt: ' + new Date(analysis.generatedAt).toLocaleString('nl-NL')
+                    : 'Nog niet gegenereerd';
+                summaryEl.textContent = analysis.marketSummary || '';
+                if (analysis.disclaimer) disclaimerEl.textContent = analysis.disclaimer;
+
+                const suggestions = analysis.suggestions || [];
+                if (suggestions.length === 0) {
+                    suggestionsEl.innerHTML = '';
+                    emptyEl.classList.remove('hidden');
+                    return;
+                }
+                emptyEl.classList.add('hidden');
+
+                suggestionsEl.innerHTML = suggestions.map((s, idx) => {
+                    const dirColor = s.direction === 'LONG' ? 'text-emerald-400' : 'text-rose-400';
+                    const assetLabel = ASSET_LABELS[s.assetClass] || s.assetClass || '';
+                    return `
+                        <div class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs">
+                            <div class="flex items-center justify-between mb-2">
+                                <div>
+                                    <span class="font-semibold text-white">${escapeHtml(s.instrument || '')}</span>
+                                    <span class="text-[10px] text-slate-500 uppercase ml-1">${escapeHtml(assetLabel)}</span>
+                                </div>
+                                <span class="${dirColor} font-bold">${escapeHtml(s.direction || '')}</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 text-slate-400 mb-2">
+                                <div>Entry<div class="text-slate-200 font-medium">${formatNumber(s.entry)}</div></div>
+                                <div>SL<div class="text-rose-400 font-medium">${formatNumber(s.stopLoss)}</div></div>
+                                <div>TP<div class="text-emerald-400 font-medium">${formatNumber(s.target)}</div></div>
+                            </div>
+                            <p class="text-slate-400 mb-2">${escapeHtml(s.rationale || '')}</p>
+                            <button onclick='acceptAiSuggestion(${idx})' class="w-full bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-600/30 font-semibold py-1.5 rounded transition">
+                                <i class="fa-solid fa-plus mr-1"></i>Overnemen naar mijn trades
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                window._aiSuggestionsCache = suggestions;
+            } catch (e) {
+                console.error('Kon AI-analyse niet laden:', e);
+                timestampEl.textContent = '';
+                summaryEl.textContent = '';
+                suggestionsEl.innerHTML = '';
+                emptyEl.classList.remove('hidden');
+                emptyEl.textContent = 'AI-analyse kon niet geladen worden (nog geen data/analysis.json gevonden).';
+            }
+        }
+
+        function acceptAiSuggestion(idx) {
+            const s = (window._aiSuggestionsCache || [])[idx];
+            if (!s) return;
+
+            const trades = loadTrades();
+            trades.push({
+                id: 'ai-' + Date.now(),
+                instrument: s.instrument,
+                direction: s.direction,
+                assetClass: s.assetClass,
+                entry: s.entry,
+                stopLoss: s.stopLoss,
+                target: s.target,
+                status: 'In Afwachting'
+            });
+            saveTrades(trades);
+            renderTrades();
+
+            const list = document.getElementById('tradesTableBody');
+            if (list) list.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // ==========================================
+        // Live Marktdata (gratis publieke APIs, geen key nodig)
+        // ==========================================
+        async function loadLiveMarketData() {
+            const container = document.getElementById('liveMarketData');
+            container.innerHTML = '<div class="text-slate-500">Laden...</div>';
+
+            const rows = [];
+
+            try {
+                const fxRes = await fetch('https://api.frankfurter.app/latest?from=EUR&to=USD,GBP');
+                const fx = await fxRes.json();
+                if (fx && fx.rates) {
+                    if (fx.rates.USD) rows.push({ label: 'EUR/USD', value: fx.rates.USD.toFixed(4) });
+                    if (fx.rates.GBP) rows.push({ label: 'EUR/GBP', value: fx.rates.GBP.toFixed(4) });
+                }
+            } catch (e) {
+                console.error('Forex data kon niet geladen worden:', e);
+            }
+
+            try {
+                const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true');
+                const cg = await cgRes.json();
+                if (cg.bitcoin) rows.push({ label: 'BTC/USD', value: '$' + Math.round(cg.bitcoin.usd).toLocaleString('nl-NL'), change: cg.bitcoin.usd_24h_change });
+                if (cg.ethereum) rows.push({ label: 'ETH/USD', value: '$' + Math.round(cg.ethereum.usd).toLocaleString('nl-NL'), change: cg.ethereum.usd_24h_change });
+            } catch (e) {
+                console.error('Crypto data kon niet geladen worden:', e);
+            }
+
+            if (rows.length === 0) {
+                container.innerHTML = '<div class="text-rose-400">Kon live koersen niet ophalen.</div>';
+                return;
+            }
+
+            container.innerHTML = rows.map(r => {
+                let changeHtml = '';
+                if (typeof r.change === 'number') {
+                    const changeColor = r.change >= 0 ? 'text-emerald-400' : 'text-rose-400';
+                    const changeIcon = r.change >= 0 ? 'fa-arrow-up' : 'fa-arrow-down';
+                    changeHtml = `<span class="${changeColor} ml-2"><i class="fa-solid ${changeIcon}"></i> ${Math.abs(r.change).toFixed(1)}%</span>`;
+                }
+                return `
+                    <div class="flex justify-between items-center border-b border-slate-800/60 pb-2 last:border-0 last:pb-0">
+                        <span class="text-slate-400">${r.label}</span>
+                        <span class="text-white font-semibold">${r.value}${changeHtml}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Risico calculator functie
+        function calculateRisk() {
+            const accSize = parseFloat(document.getElementById('accountSize').value) || 0;
+            const riskPct = parseFloat(document.getElementById('riskPercent').value) || 0;
+            
+            const maxLoss = (accSize * (riskPct / 100)).toFixed(2);
+            document.getElementById('calcResult').innerHTML = `Max Toegestaan Verlies: <span class="text-emerald-400 font-bold">€${maxLoss}</span>`;
+        }
+
+        // Chart.js initialisatie
+        window.addEventListener('DOMContentLoaded', () => {
+            updateMarketSession();
+            setAssetFilter('all');
+            renderJournal();
+            loadAiAnalysis();
+            loadLiveMarketData();
+            
+            const ctx = document.getElementById('sectorChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'Eli Lilly',
+                            data: [100, 108, 115, 112, 125, 134],
+                            borderColor: '#34d399',
+                            backgroundColor: 'rgba(52, 211, 153, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Novo Nordisk',
+                            data: [100, 105, 110, 118, 116, 122],
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'transparent',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', boxWidth: 12, font: { size: 10 } }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#64748b', font: { size: 9 } } },
+                        y: { grid: { color: 'rgba(51, 65, 85, 0.2)' }, ticks: { color: '#64748b', font: { size: 9 } } }
+                    }
+                }
+            });
+        });
+
+        // Handmatige refresh actie simulatie
+        function refreshData() {
+            const btnText = document.querySelector('button[onclick="refreshData()"]');
+            btnText.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Updaten...';
+            setTimeout(() => {
+                updateMarketSession();
+                document.getElementById('updateTimestamp').innerText = "Bijgewerkt: " + new Date().toLocaleTimeString();
+                btnText.innerHTML = '<i class="fa-solid fa-rotate"></i> Handmatig Verversen';
+            }, 800);
+        }
+    </script>
+</body>
+</html>
+
