@@ -1,0 +1,53 @@
+name: AI Marktanalyse
+
+on:
+  schedule:
+    # 06:00 en 13:00 UTC = ongeveer 08:00 en 15:00 in Nederland (let op zomer/wintertijd verschil van 1 uur)
+    - cron: '0 6 * * 1-5'
+    - cron: '0 13 * * 1-5'
+  workflow_dispatch: {}   # hiermee kun je 'm ook handmatig starten via de GitHub-website
+
+permissions:
+  contents: write
+
+jobs:
+  genereer-analyse:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository ophalen
+        uses: actions/checkout@v4
+
+      - name: Node.js instellen
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Analyse genereren
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TWELVE_DATA_API_KEY: ${{ secrets.TWELVE_DATA_API_KEY }}
+        run: node scripts/generate-analysis.js
+
+      - name: Notificatie-e-mail versturen (optioneel)
+        if: success()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+        run: node scripts/send-notification.js
+
+      - name: Resultaat committen
+        if: success()
+        run: |
+          git config user.name "AI Marktanalyse Bot"
+          git config user.email "actions@github.com"
+          git add data/analysis.json data/archive data/track-record.json blog
+          git diff --cached --quiet || git commit -m "Update AI marktanalyse ($(date -u +'%Y-%m-%d %H:%M UTC'))"
+          git push
+
+      - name: Foutmelding versturen bij mislukte run
+        if: failure()
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          NOTIFY_EMAIL: ${{ secrets.NOTIFY_EMAIL }}
+          GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/notify-failure.js

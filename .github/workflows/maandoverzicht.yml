@@ -1,0 +1,35 @@
+name: Maandoverzicht
+
+on:
+  schedule:
+    # 08:00 UTC op de 1e van elke maand
+    - cron: '0 8 1 * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  genereer-maandoverzicht:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository ophalen
+        uses: actions/checkout@v4
+
+      - name: Node.js instellen
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Maandoverzicht genereren
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/generate-monthly-summary.js
+
+      - name: Resultaat committen
+        run: |
+          git config user.name "AI Marktanalyse Bot"
+          git config user.email "actions@github.com"
+          git add blog
+          git diff --cached --quiet || git commit -m "Maandoverzicht ($(date -u +'%Y-%m'))"
+          git push
