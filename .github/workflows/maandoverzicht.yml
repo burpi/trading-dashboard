@@ -23,7 +23,7 @@ jobs:
 
       - name: Maandoverzicht genereren
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: node scripts/generate-monthly-summary.js
 
       - name: Resultaat committen
