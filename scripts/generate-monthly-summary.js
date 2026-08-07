@@ -11,7 +11,7 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3.6-flash';
 
 function getPreviousMonthRange() {
   const now = new Date();

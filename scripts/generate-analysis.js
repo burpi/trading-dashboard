@@ -11,7 +11,7 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-3.6-flash';
 
 // Optioneel: Twelve Data geeft exacte live koersen (forex, indices, grondstoffen, crypto)
 // i.p.v. dat het model op basis van web search moet gokken. Zonder deze key valt het
